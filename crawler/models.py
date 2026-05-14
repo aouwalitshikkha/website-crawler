@@ -13,4 +13,4 @@ class PageData:
     url: str
     status_code: int
     inbound: set[str] = field(default_factory=set)
-    outbound: set[str] = field(default_factory=set)
+    external_outbound: dict[str, int] = field(default_factory=dict)

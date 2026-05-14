@@ -1,3 +1,4 @@
+import asyncio
 import requests
 from .models import FetchResult
 
@@ -49,24 +50,81 @@ class WebFetcher:
             page.close()
 
     def fetch(self, url: str) -> FetchResult:
-        # Stage 1: requests
         try:
             resp = self._session.get(url, timeout=15)
             return FetchResult(status_code=resp.status_code, html=resp.text)
         except Exception:
             pass
 
-        # Stage 2: Playwright headless
         try:
             return self._fetch_with_playwright(url, headless=True)
         except Exception:
             pass
 
-        # Stage 3: Playwright headed
         try:
             return self._fetch_with_playwright(url, headless=False)
         except Exception as e:
             return FetchResult(status_code=0, html="", error=str(e))
+
+    def fetch_status(self, url: str) -> int:
+        try:
+            resp = self._session.head(url, timeout=10, allow_redirects=True)
+            return resp.status_code
+        except Exception:
+            try:
+                resp = self._session.get(url, timeout=10, stream=True)
+                return resp.status_code
+            except Exception:
+                return 0
+
+    def fetch_statuses_batch(self, urls: list[str]) -> dict[str, int]:
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(
+                    self._fetch_statuses_async(urls)
+                )
+            finally:
+                loop.close()
+        except Exception:
+            return self._fetch_statuses_sequential(urls)
+
+    async def _fetch_statuses_async(self,
+                                    urls: list[str]) -> dict[str, int]:
+        import aiohttp
+        headers = dict(self._session.headers)
+        connector = aiohttp.TCPConnector(limit=15)
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(
+            headers=headers, connector=connector
+        ) as session:
+
+            async def check(url):
+                try:
+                    async with session.head(
+                        url, timeout=timeout, allow_redirects=True
+                    ) as resp:
+                        return url, resp.status
+                except Exception:
+                    try:
+                        async with session.get(
+                            url, timeout=timeout
+                        ) as resp:
+                            return url, resp.status
+                    except Exception:
+                        return url, 0
+
+            tasks = [check(url) for url in urls]
+            results = await asyncio.gather(*tasks)
+            return dict(results)
+
+    def _fetch_statuses_sequential(self,
+                                   urls: list[str]) -> dict[str, int]:
+        result = {}
+        for url in urls:
+            result[url] = self.fetch_status(url)
+        return result
 
     def close(self):
         if self._browser:
