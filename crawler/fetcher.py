@@ -55,12 +55,10 @@ class WebFetcher:
             return FetchResult(status_code=resp.status_code, html=resp.text)
         except Exception:
             pass
-
         try:
             return self._fetch_with_playwright(url, headless=True)
         except Exception:
             pass
-
         try:
             return self._fetch_with_playwright(url, headless=False)
         except Exception as e:
@@ -77,8 +75,60 @@ class WebFetcher:
             except Exception:
                 return 0
 
+    # --- Batch fetch: async first, fallback to per-page sync ---
+    def fetch_batch(self, urls: list[str]) -> dict[str, FetchResult]:
+        results: dict[str, FetchResult] = {}
+        async_used = False
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                async_results = loop.run_until_complete(
+                    self._fetch_batch_async(urls)
+                )
+                results.update(async_results)
+                async_used = True
+            finally:
+                loop.close()
+        except Exception:
+            pass
+
+        failed = [u for u in urls
+                  if u not in results or results[u].status_code == 0]
+        if failed:
+            if async_used:
+                print(f"    Async partial fail, falling back sync for {len(failed)} URLs")
+            for url in failed:
+                results[url] = self.fetch(url)
+        return results
+
+    async def _fetch_batch_async(self,
+                                 urls: list[str]) -> dict[str, FetchResult]:
+        import aiohttp
+        headers = dict(self._session.headers)
+        connector = aiohttp.TCPConnector(limit=10)
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with aiohttp.ClientSession(
+            headers=headers, connector=connector
+        ) as session:
+
+            async def get_one(url):
+                try:
+                    async with session.get(url, timeout=timeout) as resp:
+                        html = await resp.text()
+                        return url, FetchResult(
+                            status_code=resp.status, html=html
+                        )
+                except Exception as e:
+                    return url, FetchResult(
+                        status_code=0, html="", error=str(e)
+                    )
+
+            tasks = [get_one(u) for u in urls]
+            return dict(await asyncio.gather(*tasks))
+
+    # --- External status batch: async first, fallback ---
     def fetch_statuses_batch(self, urls: list[str]) -> dict[str, int]:
-        print(f"    Checking {len(urls)} external links...")
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -88,8 +138,7 @@ class WebFetcher:
                 )
             finally:
                 loop.close()
-        except Exception as e:
-            print(f"    Async batch failed ({e}), falling back to sequential")
+        except Exception:
             return self._fetch_statuses_sequential(urls)
 
     async def _fetch_statuses_async(self,
@@ -110,9 +159,7 @@ class WebFetcher:
                         return url, resp.status
                 except Exception:
                     try:
-                        async with session.get(
-                            url, timeout=timeout
-                        ) as resp:
+                        async with session.get(url, timeout=timeout) as resp:
                             return url, resp.status
                     except Exception:
                         return url, 0
