@@ -78,6 +78,7 @@ class WebFetcher:
                 return 0
 
     def fetch_statuses_batch(self, urls: list[str]) -> dict[str, int]:
+        print(f"    Checking {len(urls)} external links...")
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -87,7 +88,8 @@ class WebFetcher:
                 )
             finally:
                 loop.close()
-        except Exception:
+        except Exception as e:
+            print(f"    Async batch failed ({e}), falling back to sequential")
             return self._fetch_statuses_sequential(urls)
 
     async def _fetch_statuses_async(self,
