@@ -18,10 +18,10 @@ A multi-threaded Python website crawler that maps internal link structures, dete
 
 ```bash
 git clone https://github.com/aouwalitshikkha/website-crawler.git
-cd crawlingsite
+cd website-crawler
 python -m venv .venv
-.venv\Scripts\activate       # Windows
-# source .venv/bin/activate  # Linux/Mac
+# .venv\Scripts\activate       # works in windows cmd 
+source .venv/bin/activate  # works in git bash 
 pip install -r requirements.txt
 playwright install chromium
 ```
