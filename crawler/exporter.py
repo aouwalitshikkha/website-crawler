@@ -109,13 +109,42 @@ class ExcelExporter:
             ws3.cell(row=i, column=1, value=error_url)
             ws3.cell(row=i, column=2, value=ref_url)
 
-        for ws in [ws1, ws2, ws3]:
+        # Sheet 4: Meta Data — meta tags for every page
+        ws4 = wb.create_sheet("Meta Data")
+        headers4 = [
+            "URL", "Status Code", "Meta Title", "Meta Description",
+            "Meta Robots", "Title Length", "Description Length",
+        ]
+        for col, header in enumerate(headers4, 1):
+            cell = ws4.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center")
+
+        row4 = 2
+        for url in sorted(pages.keys()):
+            page = pages[url]
+            ws4.cell(row=row4, column=1, value=url)
+            ws4.cell(row=row4, column=2, value=page.status_code)
+            ws4.cell(row=row4, column=3, value=page.meta_title)
+            ws4.cell(row=row4, column=4, value=page.meta_description)
+            ws4.cell(row=row4, column=5, value=page.meta_robots or "(absent)")
+            ws4.cell(row=row4, column=6, value=len(page.meta_title))
+            ws4.cell(row=row4, column=7, value=len(page.meta_description))
+            row4 += 1
+
+        for ws in [ws1, ws2, ws3, ws4]:
             ws.column_dimensions["A"].width = 60
             ws.column_dimensions["B"].width = 14
             if ws in (ws1, ws2):
                 ws.column_dimensions["C"].width = 14
                 ws.column_dimensions["D"].width = 80
                 ws.column_dimensions["E"].width = 80
+            elif ws is ws4:
+                ws.column_dimensions["C"].width = 60
+                ws.column_dimensions["D"].width = 80
+                ws.column_dimensions["E"].width = 16
+                ws.column_dimensions["F"].width = 16
+                ws.column_dimensions["G"].width = 20
 
         wb.save(path)
         total = len(pages)

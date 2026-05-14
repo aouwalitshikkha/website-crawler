@@ -40,3 +40,28 @@ class LinkParser:
             links.add(clean_url)
 
         return links
+
+    @staticmethod
+    def extract_meta(html: str) -> dict[str, str]:
+        soup = BeautifulSoup(html, "lxml")
+        title = ""
+        description = ""
+        robots = ""
+
+        tag = soup.find("title")
+        if tag:
+            title = tag.get_text(strip=True)
+
+        tag = soup.find("meta", attrs={"name": "description"})
+        if tag:
+            description = tag.get("content", "").strip()
+
+        tag = soup.find("meta", attrs={"name": "robots"})
+        if tag:
+            robots = tag.get("content", "").strip()
+
+        return {
+            "title": title,
+            "description": description,
+            "robots": robots,
+        }

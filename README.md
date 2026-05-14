@@ -6,7 +6,8 @@ A multi-threaded Python website crawler that maps internal link structures, dete
 
 - **BFS crawl** — Same-domain breadth-first traversal with configurable batch size
 - **Async-first** — Uses `aiohttp` by default, falls back to `requests`, then Playwright headless Chromium
-- **3 Excel sheets** — Link Graph, Broken Links (error pages & external), Error References (broken URL → source mapping)
+- **4 Excel sheets** — Link Graph, Broken Links, Error References, Meta Data
+- **Meta extraction** — Captures title, description, robots directives with character counts
 - **Page size tracking** — Captures HTML byte size for every crawled page
 - **Social link filtering** — Excludes Facebook, Twitter/X, LinkedIn, Instagram, etc. from reports
 - **External link validation** — Checks outbound link status via HEAD (fallback GET) with caching
@@ -85,6 +86,20 @@ Flat mapping of every broken URL to the pages referencing it.
 | Error Page | The non-200 URL (internal or external, social excluded) |
 | Reference Page | The page that contains a link to the error URL |
 
+### Sheet 4: Meta Data
+
+Meta tags extracted from every crawled page.
+
+| Column | Description |
+|---|---|
+| URL | Page address |
+| Status Code | HTTP response status |
+| Meta Title | Content of the `<title>` tag |
+| Meta Description | Content of `meta name="description"` |
+| Meta Robots | Content of `meta name="robots"` (or `(absent)`) |
+| Title Length | Character count of Meta Title (including whitespace) |
+| Description Length | Character count of Meta Description (including whitespace) |
+
 ## Project structure
 
 ```
@@ -97,7 +112,6 @@ crawlingsite/
 │   ├── exporter.py         # Excel export (3 sheets)
 │   └── models.py           # Data classes
 ├── requirements.txt
-├── AGENTS.md               # AI agent instructions
 └── README.md
 ```
 

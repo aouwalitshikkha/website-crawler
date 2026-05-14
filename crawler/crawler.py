@@ -79,6 +79,11 @@ class Crawler:
 
                 if result.html and result.status_code == 200:
                     links = LinkParser.extract_links(result.html, url)
+
+                    meta = LinkParser.extract_meta(result.html)
+                    page.meta_title = meta["title"]
+                    page.meta_description = meta["description"]
+                    page.meta_robots = meta["robots"]
                     new_external: list[str] = []
 
                     for link in links:
