@@ -72,8 +72,9 @@ class Crawler:
                 if url in pages:
                     page = pages[url]
                     page.status_code = result.status_code
+                    page.page_size = result.size
                 else:
-                    page = PageData(url=url, status_code=result.status_code)
+                    page = PageData(url=url, status_code=result.status_code, page_size=result.size)
                     pages[url] = page
 
                 if result.html and result.status_code == 200:

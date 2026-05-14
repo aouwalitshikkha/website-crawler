@@ -45,14 +45,14 @@ class WebFetcher:
         try:
             page.goto(url, wait_until="networkidle", timeout=30000)
             html = page.content()
-            return FetchResult(status_code=200, html=html)
+            return FetchResult(status_code=200, html=html, size=len(html.encode('utf-8')))
         finally:
             page.close()
 
     def fetch(self, url: str) -> FetchResult:
         try:
             resp = self._session.get(url, timeout=15)
-            return FetchResult(status_code=resp.status_code, html=resp.text)
+            return FetchResult(status_code=resp.status_code, html=resp.text, size=len(resp.text.encode('utf-8')))
         except Exception:
             pass
         try:
@@ -117,7 +117,8 @@ class WebFetcher:
                     async with session.get(url, timeout=timeout) as resp:
                         html = await resp.text()
                         return url, FetchResult(
-                            status_code=resp.status, html=html
+                            status_code=resp.status, html=html,
+                            size=len(html.encode('utf-8'))
                         )
                 except Exception as e:
                     return url, FetchResult(

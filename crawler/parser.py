@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 class LinkParser:
     @staticmethod
     def get_domain(url: str) -> str:
-        return urlparse(url).netloc
+        return urlparse(url).netloc.lstrip("www.")
 
     @staticmethod
     def is_external(url: str, domain: str) -> bool:
