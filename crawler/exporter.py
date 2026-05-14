@@ -15,7 +15,7 @@ class ExcelExporter:
             wb = Workbook()
             ws = wb.active
             ws.title = "Crawl Results"
-            headers = ["URL", "Status Code", "Inbound Links", "External Outbound Links"]
+            headers = ["URL", "Status Code", "Broken Inbound (non-200)", "External Outbound (all)"]
             header_font = Font(bold=True, size=11)
             for col, header in enumerate(headers, 1):
                 cell = ws.cell(row=1, column=col, value=header)
@@ -65,7 +65,8 @@ class ExcelExporter:
             status = (
                 pages[link].status_code if link in pages else "?"
             )
-            formatted.append(f"{link} ({status})")
+            if status != 200:
+                formatted.append(f"{link} ({status})")
         return ", ".join(formatted)
 
     @staticmethod
