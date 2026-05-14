@@ -16,7 +16,7 @@ A multi-threaded Python website crawler that maps internal link structures, dete
 ## Installation
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/aouwalitshikkha/website-crawler.git
 cd crawlingsite
 python -m venv .venv
 .venv\Scripts\activate       # Windows
